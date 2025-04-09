@@ -1,55 +1,13 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #ee9219;
+@layer utilities {
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
   }
   
-  header {
-    background-color: #333;
-    padding: 1em;
-    text-align: center;
+  .animate-bounce {
+    animation: bounce 1.5s infinite;
   }
-  
-  nav button {
-    background-color: #555;
-    color: #fff;
-    border: none;
-    padding: 0.75em 1em;
-    margin: 0 0.5em;
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 1em;
-  }
-  
-  nav button:hover {
-    background-color: #777;
-  }
-  
-  .view {
-    padding: 1em;
-  }
-  
-  .cards-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1em;
-    justify-content: center;
-    margin-top: 1em;
-  }
-  
-  .card {
-    background-color: #6b6b6b;
-    border: 1px solid #fb4f4f;
-    border-radius: 6px;
-    padding: 1em;
-    width: 200px;
-    text-align: center;
-    box-shadow: 0px 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .card img {
-    max-width: 100%;
-    border-radius: 4px;
-  }
-  
+}
+img {
+  max-width: 100%;
+  height: auto;
+}
