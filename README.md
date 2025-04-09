@@ -65,8 +65,13 @@ Este es un proyecto web que consume la [DragonBall API](https://dragonball-api.c
 
 La aplicación tiene dos botones principales:
 
-- **Personajes:** Muestra la lista completa de personajes.
-- **Planetas:** Muestra la lista completa de planetas.
+- **Personajes:** Muestra la lista completa de personajes.  
+    ![Vista de personajes](https://res.cloudinary.com/dkhuqpgam/image/upload/f_auto,q_auto/Vista%20Personajes)
+- **Planetas:** Muestra la lista completa de planetas.  
+    ![Vista de planetas](https://res.cloudinary.com/dkhuqpgam/image/upload/f_auto,q_auto/Vista%20Planetas)
+
+- **Además, este es el Footer:**
+      ![Footer](https://res.cloudinary.com/dkhuqpgam/image/upload/f_auto,q_auto/DragonBall%20API%20Footer)
 
 ### Modal de Detalle:
 
