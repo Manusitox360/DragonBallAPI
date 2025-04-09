@@ -247,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchCharacters() {
     try {
       charactersContainer.innerHTML = loader;
-      const response = await fetch('https://dragonball-api.com/api/characters');
+      const response = await fetch('https://dragonball-api.com/api/characters?limit=1000');
       const data = await response.json();
       
       if (data.items && data.items.length > 0) {
@@ -367,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
   async function fetchPlanets() {
     try {
       planetsContainer.innerHTML = loader;
-      const response = await fetch('https://dragonball-api.com/api/planets');
+      const response = await fetch('https://dragonball-api.com/api/planets?limit=1000');
       const data = await response.json();
       
       if (data.items && data.items.length > 0) {
