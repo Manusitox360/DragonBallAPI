@@ -5,49 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DragonBall API</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dbz-text {
+      background: linear-gradient(to right, #fbbf24, #f59e0b);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex flex-col">
-  <header class="bg-gradient-to-r from-yellow-400 to-orange-500 py-6 shadow-md">
+<body class="bg-gray-100 min-h-screen">
+  <header class="bg-gradient-to-r from-yellow-400 to-orange-500 py-6 shadow-lg">
     <div class="container mx-auto px-4">
-      <h1 class="text-4xl font-bold text-center text-white drop-shadow-md">
-        DragonBall API
+      <h1 class="text-4xl font-bold text-center text-white mb-6">
+        DragonBall Z API
       </h1>
-      
-      <!-- Menú de navegación -->
-      <nav class="mt-6 flex justify-center space-x-4">
-        <button id="btn-characters" class="px-4 py-2 bg-white text-orange-500 rounded-lg font-semibold hover:bg-gray-100 transition-colors shadow">
+      <div class="flex justify-center space-x-4">
+        <button id="btn-characters" class="px-6 py-2 bg-white text-orange-500 rounded-full font-bold hover:bg-gray-50 transition-all shadow-md">
           Personajes
         </button>
-        <button id="btn-planets" class="px-4 py-2 bg-white text-orange-500 rounded-lg font-semibold hover:bg-gray-100 transition-colors shadow">
+        <button id="btn-planets" class="px-6 py-2 bg-white text-orange-500 rounded-full font-bold hover:bg-gray-50 transition-all shadow-md">
           Planetas
         </button>
-      </nav>
+      </div>
     </div>
   </header>
 
-  <main class="container mx-auto px-4 py-8 flex-grow">
-    <!-- Vista de Personajes -->
+  <main class="container mx-auto px-4 py-8">
     <div id="characters-view" class="block">
       <div id="characters" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Personajes se insertarán aquí -->
+        <!-- Personajes se cargarán aquí -->
       </div>
     </div>
 
-    <!-- Vista de Planetas -->
     <div id="planets-view" class="hidden">
-      <div id="planets" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Planetas se insertarán aquí -->
+      <div id="planets" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Planetas se cargarán aquí -->
       </div>
     </div>
   </main>
 
-  <footer class="bg-gray-800 text-white py-4 mt-12">
+  <footer class="bg-gray-800 text-white py-6 mt-12">
     <div class="container mx-auto px-4 text-center">
-      <p>Manuel Espinosa Guillén © 2025</p>
+      <p class="text-yellow-400 font-bold">Manuel Espinosa Guillén © 2025</p>
+      <p class="text-gray-400 mt-2">Datos proporcionados por DragonBall API</p>
     </div>
   </footer>
 
   <script src="script.js"></script>
+  
+<!-- Modal de detalle -->
+<div id="detail-modal" class="fixed inset-0 hidden flex items-center justify-center bg-black bg-opacity-50 z-50">
+  <div class="bg-white rounded-lg p-6 w-11/12 md:w-3/4 lg:w-1/2 relative">
+    <button id="modal-close" class="absolute top-2 right-2 text-gray-600 text-2xl font-bold">&times;</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+
 </body>
 </html>

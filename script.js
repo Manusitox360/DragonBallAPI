@@ -1,276 +1,405 @@
-// Selecciona los contenedores principales
-const charactersContainer = document.getElementById('characters');
-const planetsContainer = document.getElementById('planets');
-
-// Verifica que los elementos existan
-if (!charactersContainer || !planetsContainer) {
-  console.error('Error: No se encontraron los contenedores principales');
-}
-
-// Loader para mostrar durante las peticiones
-const loader = `<div class="flex justify-center items-center h-32">
-  <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-</div>`;
-
-// Función genérica para obtener todos los registros de una API paginada
-async function fetchAll(url) {
-    let results = [];
-    let nextUrl = url;
-    
-    while (nextUrl) {
-      try {
-        console.log("Fetching:", nextUrl);
-        const response = await fetch(nextUrl);
-        const data = await response.json();
-        console.log("Respuesta:", data);
-        
-        // Se acumulan los items (si existen)
-        if (data.items) {
-          results = results.concat(data.items);
-        } else if (Array.isArray(data)) {
-          results = results.concat(data);
-        }
-        
-        // Se actualiza la URL de la siguiente página (si existe)
-        nextUrl = (data.links && data.links.next) ? data.links.next : null;
-      } catch (error) {
-        console.error("Error en la paginación:", error);
-        nextUrl = null;
-      }
-    }
-    
-    return results;
-}
-
-// Funciones para obtener todos los personajes y planetas
-async function fetchCharacters() {
-    charactersContainer.innerHTML = loader; // Mostrar loader antes de fetch
-    try {
-        const url = 'https://dragonball-api.com/api/characters'; // Nota: Hay un typo en "characters"
-        const characters = await fetchAll(url);
-        displayCharacters(characters);
-    } catch (error) {
-        console.error("Error fetching characters:", error);
-        charactersContainer.innerHTML = `<p class="text-red-500 text-center py-8">Error al cargar los personajes</p>`;
-    }
-}
-
-async function fetchPlanets() {
-    planetsContainer.innerHTML = loader; // Mostrar loader antes de fetch
-    try {
-        const url = 'https://dragonball-api.com/api/planets'; // Nota: Hay un typo en "planets"
-        const planets = await fetchAll(url);
-        displayPlanets(planets);
-    } catch (error) {
-        console.error("Error fetching planets:", error);
-        planetsContainer.innerHTML = `<p class="text-red-500 text-center py-8">Error al cargar los planetas</p>`;
-    }
-}
-
-// Funciones para renderizar en pantalla
-function displayCharacters(characters) {
-  // Verifica nuevamente que el contenedor existe
-  if (!charactersContainer) {
-      console.error('Error: El contenedor de personajes no existe');
-      return;
+document.addEventListener('DOMContentLoaded', function() {
+  // Elementos del DOM
+  const charactersContainer = document.getElementById('characters');
+  const planetsContainer = document.getElementById('planets');
+  const btnCharacters = document.getElementById('btn-characters');
+  const btnPlanets = document.getElementById('btn-planets');
+  
+  // Verificación de elementos
+  if (!charactersContainer || !planetsContainer || !btnCharacters || !btnPlanets) {
+    console.error('Error: Elementos del DOM no encontrados');
+    return;
   }
-  
-  charactersContainer.innerHTML = ''; // Limpiar el contenedor
-  
-  if (!characters || characters.length === 0) {
-      charactersContainer.innerHTML = '<p class="text-center py-8">No se encontraron personajes</p>';
-      return;
+
+  // Loader
+  const loader = `
+    <div class="col-span-full flex justify-center items-center py-12">
+      <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-orange-500"></div>
+    </div>
+  `;
+
+  // Función para formatear números grandes (para los personajes, si se requiere)
+  function formatNumber(num) {
+    if (!num) return 'Desconocido';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   }
-  
-  characters.forEach(character => {
-      const card = createCharacterCard(character);
-      charactersContainer.appendChild(card);
-  });
-}
 
-function displayPlanets(planets) {
-    planetsContainer.innerHTML = ''; // Limpiar el contenedor
-    
-    if (!planets || planets.length === 0) {
-        planetsContainer.innerHTML = '<p class="text-center py-8">No se encontraron planetas</p>';
-        return;
-    }
-    
-    planets.forEach(planet => {
-        const card = createPlanetCard(planet);
-        planetsContainer.appendChild(card);
-    });
-}
+  // =====================================================
+  // Funciones para el Modal de detalle (show)
+  // =====================================================
 
-function createCharacterCard(character) {
-    const card = document.createElement('div');
-    card.className = 'bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300';
-    
-    const image = document.createElement('img');
-    image.className = 'w-full h-48 object-cover';
-    image.src = character.image || 'placeholder.jpg';
-    image.alt = character.name;
-    image.onerror = () => { image.src = 'placeholder.jpg'; }; // Fallback para imágenes rotas
-    
-    const cardBody = document.createElement('div');
-    cardBody.className = 'p-4';
-    
+  // Función para abrir el modal con contenido personalizado
+  function showDetail(data, type) {
+    const modal = document.getElementById('detail-modal');
+    const modalContent = document.getElementById('modal-content');
+
+    // Limpiar contenido previo
+    modalContent.innerHTML = '';
+
+    // Creamos un contenedor interno para el scroll (altura máxima y scroll automático)
+    const contentWrapper = document.createElement('div');
+    contentWrapper.className = 'max-h-[80vh] overflow-y-auto';
+
+    // Título
     const title = document.createElement('h2');
-    title.className = 'text-xl font-bold mb-2 text-gray-800';
-    title.textContent = character.name;
+    title.className = 'text-3xl font-bold mb-4';
+    title.textContent = data.name;
+
+    // Imagen ampliada con tamaño controlado
+    const img = document.createElement('img');
+    img.src = data.image || 'https://via.placeholder.com/300x400?text=DragonBall';
+    img.alt = data.name;
+    // Limitar la altura máxima de la imagen para que no ocupe demasiado espacio en pantalla
+    img.className = 'w-full object-contain mb-4';
+    img.style.maxHeight = '300px';
+
+    // Descripción (si existe)
+    const description = document.createElement('p');
+    description.className = 'text-gray-700 mb-4';
+    description.textContent = data.description || 'No hay información adicional.';
+
+    // Contenido extra según tipo
+    const extra = document.createElement('div');
+    extra.className = 'mt-4';
+    if (type === 'character') {
+      const race = document.createElement('p');
+      race.innerHTML = `<strong>Raza:</strong> ${data.race || 'Desconocida'}`;
+      const gender = document.createElement('p');
+      gender.innerHTML = `<strong>Género:</strong> ${data.gender || 'Desconocido'}`;
+      const affiliation = document.createElement('p');
+      affiliation.innerHTML = `<strong>Afiliación:</strong> ${data.affiliation || 'Desconocida'}`;
+      const ki = document.createElement('p');
+      ki.innerHTML = `<strong>Poder:</strong> ${data.ki ? data.ki.toLocaleString() : 'Desconocido'}`;
+      const maxKi = document.createElement('p');
+      maxKi.innerHTML = `<strong>Poder Máx:</strong> ${data.maxKi ? data.maxKi.toLocaleString() : 'Desconocido'}`;
+      extra.append(race, gender, affiliation, ki, maxKi);
+    } else if (type === 'planet') {
+      const status = document.createElement('p');
+      const estado = data.isDestroyed ? 'Destruido' : 'Activo';
+      status.innerHTML = `<strong>Estado:</strong> ${estado}`;
+      extra.appendChild(status);
+    }
+
+    // Agregar todos los elementos al wrapper para scroll
+    contentWrapper.append(title, img, description, extra);
+    // Agregar el wrapper al contenedor del modal
+    modalContent.appendChild(contentWrapper);
+
+    // Mostrar modal quitando la clase 'hidden'
+    modal.classList.remove('hidden');
+  }
+
+  // Función para cerrar el modal
+  function closeModal() {
+    const modal = document.getElementById('detail-modal');
+    modal.classList.add('hidden');
+  }
+
+  // Listener para botón de cierre
+  document.getElementById('modal-close').addEventListener('click', closeModal);
+  // Cierra el modal al hacer clic fuera del contenido
+  document.getElementById('detail-modal').addEventListener('click', function(e) {
+    if (e.target === this) {
+      closeModal();
+    }
+  });
+
+ 
+  // Tarjetas y funciones para personajes y planetas
+  
+
+  // Tarjeta de Personaje 
+  function createCharacterCard(character) {
+    const card = document.createElement('div');
+    card.className = 'bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full border-2 border-orange-100';
     
+    // Imagen del personaje
+    const imgContainer = document.createElement('div');
+    imgContainer.className = 'relative h-48 overflow-hidden bg-gray-200 flex items-center justify-center';
+    
+    const img = document.createElement('img');
+    img.className = 'max-w-full max-h-full object-contain transition-transform duration-500 hover:scale-105';
+    img.src = character.image || 'https://via.placeholder.com/300x400?text=DragonBall';
+    img.alt = character.name;
+    img.onerror = () => { img.src = 'https://via.placeholder.com/300x400?text=DragonBall'; };
+
+    imgContainer.appendChild(img);
+    card.appendChild(imgContainer);
+    
+    // Contenido de la tarjeta
+    const cardBody = document.createElement('div');
+    cardBody.className = 'p-4 flex-grow flex flex-col';
+    
+    // Nombre
+    const name = document.createElement('h2');
+    name.className = 'text-2xl font-bold mb-2 dbz-text';
+    name.textContent = character.name;
+    
+    // Detalles
     const details = document.createElement('div');
-    details.className = 'space-y-1';
+    details.className = 'space-y-2 text-gray-700 flex-grow';
     
+    // Raza
     const race = document.createElement('p');
-    race.className = 'text-gray-600';
-    race.innerHTML = `<span class="font-semibold">Raza:</span> ${character.race || 'Desconocida'}`;
+    race.className = 'flex items-start';
+    race.innerHTML = `
+      <span class="font-semibold min-w-[80px]">Raza:</span>
+      <span class="flex-grow">${character.race || 'Desconocida'}</span>
+    `;
     
+    // Género
+    const gender = document.createElement('p');
+    gender.className = 'flex items-start';
+    gender.innerHTML = `
+      <span class="font-semibold min-w-[80px]">Género:</span>
+      <span class="flex-grow">${character.gender || 'Desconocido'}</span>
+    `;
+    
+    // Afiliación
+    const affiliation = document.createElement('p');
+    affiliation.className = 'flex items-start';
+    affiliation.innerHTML = `
+      <span class="font-semibold min-w-[80px]">Afiliación:</span>
+      <span class="flex-grow">${character.affiliation || 'Desconocida'}</span>
+    `;
+    
+    // Poder (KI)
+    const ki = document.createElement('p');
+    ki.className = 'flex items-start';
+    ki.innerHTML = `
+      <span class="font-semibold min-w-[80px]">Poder:</span>
+      <span class="flex-grow">${formatNumber(character.ki)}</span>
+    `;
+    
+    // Poder Máximo
+    const maxKi = document.createElement('p');
+    maxKi.className = 'flex items-start';
+    maxKi.innerHTML = `
+      <span class="font-semibold min-w-[80px]">Poder Máx:</span>
+      <span class="flex-grow">${formatNumber(character.maxKi)}</span>
+    `;
+    
+    // Descripción (si existe)
+    if (character.description) {
+      const desc = document.createElement('div');
+      desc.className = 'mt-3 pt-3 border-t border-gray-200';
+      desc.innerHTML = `
+        <p class="text-sm text-gray-600 line-clamp-3" title="${character.description}">
+          ${character.description}
+        </p>
+      `;
+      details.appendChild(desc);
+    }
+    
+    // Agregar elementos a detalles
     details.appendChild(race);
-    cardBody.appendChild(title);
+    details.appendChild(gender);
+    details.appendChild(affiliation);
+    details.appendChild(ki);
+    details.appendChild(maxKi);
+    
+    cardBody.appendChild(name);
     cardBody.appendChild(details);
-    card.appendChild(image);
     card.appendChild(cardBody);
     
+    // Evento para mostrar detalle en el modal
+    card.addEventListener('click', function() {
+      showDetail(character, 'character');
+    });
+    
     return card;
-}
+  }
 
-function createCharacterCard(character) {
-  const card = document.createElement('div');
-  card.className = 'bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col h-full';
-  
-  // Character Image
-  const imageContainer = document.createElement('div');
-  imageContainer.className = 'relative h-48 overflow-hidden';
-  
-  const image = document.createElement('img');
-  image.className = 'w-full h-full object-cover transition-transform duration-500 hover:scale-110';
-  image.src = character.image || 'https://via.placeholder.com/300x400?text=DragonBall';
-  image.alt = character.name;
-  image.onerror = () => { 
-    image.src = 'https://via.placeholder.com/300x400?text=DragonBall';
-  };
-  
-  imageContainer.appendChild(image);
-  card.appendChild(imageContainer);
+  function displayCharacters(characters) {
+    try {
+      const container = charactersContainer;
+      // Limpieza segura
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+      
+      if (!characters?.length) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="mt-4 text-lg font-medium text-gray-600">No se encontraron personajes</p>
+          </div>
+        `;
+        return;
+      }
+      
+      characters.forEach(character => {
+        container.appendChild(createCharacterCard(character));
+      });
+      
+    } catch (error) {
+      console.error('Error en displayCharacters:', error);
+      document.body.innerHTML = `
+        <div class="p-8 text-red-500 text-center">
+          Error crítico: ${error.message}
+        </div>
+      `;
+    }
+  }
 
-  // Character Info
-  const cardBody = document.createElement('div');
-  cardBody.className = 'p-4 flex-grow flex flex-col';
-  
-  // Name with cool DBZ-style gradient text
-  const title = document.createElement('h2');
-  title.className = 'text-2xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-orange-500 to-yellow-400';
-  title.textContent = character.name;
-  
-  // Details container
-  const details = document.createElement('div');
-  details.className = 'space-y-2 text-gray-700 flex-grow';
-  
-  // Race with icon
-  const race = document.createElement('p');
-  race.className = 'flex items-center';
-  race.innerHTML = `
-    <svg class="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-    <span class="font-semibold">Raza:</span> ${character.race || 'Desconocida'}
-  `;
-  
-  // Gender with icon
-  const gender = document.createElement('p');
-  gender.className = 'flex items-center';
-  gender.innerHTML = `
-    <svg class="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-    <span class="font-semibold">Género:</span> ${character.gender || 'Desconocido'}
-  `;
-  
-  // Affiliation with icon
-  const affiliation = document.createElement('p');
-  affiliation.className = 'flex items-center';
-  affiliation.innerHTML = `
-    <svg class="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-    </svg>
-    <span class="font-semibold">Afiliación:</span> ${character.affiliation || 'Desconocida'}
-  `;
-  
-  // Power Level (KI)
-  const ki = document.createElement('p');
-  ki.className = 'flex items-center';
-  ki.innerHTML = `
-    <svg class="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-    </svg>
-    <span class="font-semibold">Poder:</span> ${character.ki || 'Desconocido'}
-  `;
-  
-  // Max Power Level
-  const maxKi = document.createElement('p');
-  maxKi.className = 'flex items-center';
-  maxKi.innerHTML = `
-    <svg class="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-    </svg>
-    <span class="font-semibold">Poder Máximo:</span> ${character.maxKi || 'Desconocido'}
-  `;
-  
-  // Description (only show if exists)
-  if (character.description) {
-    const desc = document.createElement('div');
-    desc.className = 'mt-3 pt-3 border-t border-gray-200';
-    desc.innerHTML = `
-      <p class="text-sm italic text-gray-600">"${character.description}"</p>
+  async function fetchCharacters() {
+    try {
+      charactersContainer.innerHTML = loader;
+      const response = await fetch('https://dragonball-api.com/api/characters');
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        displayCharacters(data.items);
+      } else {
+        displayCharacters([]);
+      }
+    } catch (error) {
+      console.error('Error al cargar personajes:', error);
+      charactersContainer.innerHTML = `
+        <div class="col-span-full text-center py-12 text-red-500">
+          Error al cargar los personajes
+        </div>
+      `;
+    }
+  }
+
+  // Tarjeta de Planeta
+  function createPlanetCard(planet) {
+    const card = document.createElement('div');
+    card.className = 'bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 flex flex-col h-full border-2 border-orange-100';
+    
+    // Contenedor de imagen del planeta
+    const imgContainer = document.createElement('div');
+    imgContainer.className = 'relative h-48 overflow-hidden bg-gray-200 flex items-center justify-center';
+    
+    const img = document.createElement('img');
+    img.className = 'max-w-full max-h-full object-contain transition-transform duration-500 hover:scale-105';
+    img.src = planet.image || 'https://via.placeholder.com/300x400?text=DragonBall';
+    img.alt = planet.name;
+    img.onerror = () => { img.src = 'https://via.placeholder.com/300x400?text=DragonBall'; };
+    
+    imgContainer.appendChild(img);
+    card.appendChild(imgContainer);
+    
+    // Contenido de la tarjeta
+    const cardBody = document.createElement('div');
+    cardBody.className = 'p-4 flex-grow flex flex-col';
+    
+    // Nombre del planeta
+    const name = document.createElement('h2');
+    name.className = 'text-2xl font-bold mb-2 dbz-text';
+    name.textContent = planet.name;
+    
+    // Detalles del planeta
+    const details = document.createElement('div');
+    details.className = 'space-y-2 text-gray-700 flex-grow';
+    
+    // Estado del planeta
+    const status = document.createElement('p');
+    status.className = 'flex items-start';
+    const estado = planet.isDestroyed ? 'Destruido' : 'Activo';
+    status.innerHTML = `
+      <span class="font-semibold min-w-[80px]">Estado:</span>
+      <span class="flex-grow">${estado}</span>
     `;
-    details.appendChild(desc);
+    
+    // Descripción (si existe)
+    if (planet.description) {
+      const desc = document.createElement('div');
+      desc.className = 'mt-3 pt-3 border-t border-gray-200';
+      desc.innerHTML = `
+        <p class="text-sm text-gray-600 line-clamp-3" title="${planet.description}">
+          ${planet.description}
+        </p>
+      `;
+      details.appendChild(desc);
+    }
+    
+    details.appendChild(status);
+    cardBody.appendChild(name);
+    cardBody.appendChild(details);
+    card.appendChild(cardBody);
+    
+    // Evento para mostrar detalle en el modal
+    card.addEventListener('click', function() {
+      showDetail(planet, 'planet');
+    });
+    
+    return card;
   }
   
-  // Append all details
-  details.appendChild(race);
-  details.appendChild(gender);
-  details.appendChild(affiliation);
-  details.appendChild(ki);
-  details.appendChild(maxKi);
-  
-  cardBody.appendChild(title);
-  cardBody.appendChild(details);
-  card.appendChild(cardBody);
-  
-  return card;
-}
-
-// Código de navegación entre vistas
-const btnCharacters = document.getElementById('btn-characters');
-const btnPlanets = document.getElementById('btn-planets');
-const charactersView = document.getElementById('characters-view');
-const planetsView = document.getElementById('planets-view');
-
-btnCharacters.addEventListener('click', () => {
-    showView('characters');
-    fetchCharacters();
-});
-
-btnPlanets.addEventListener('click', () => {
-    showView('planets');
-    fetchPlanets();
-});
-
-function showView(view) {
-    if (view === 'characters') {
-        charactersView.classList.remove('hidden');
-        charactersView.classList.add('block');
-        planetsView.classList.remove('block');
-        planetsView.classList.add('hidden');
-    } else {
-        charactersView.classList.remove('block');
-        charactersView.classList.add('hidden');
-        planetsView.classList.remove('hidden');
-        planetsView.classList.add('block');
+  function displayPlanets(planets) {
+    try {
+      const container = planetsContainer;
+      // Limpieza segura
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+      
+      if (!planets?.length) {
+        container.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <svg class="w-12 h-12 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <p class="mt-4 text-lg font-medium text-gray-600">No se encontraron planetas</p>
+          </div>
+        `;
+        return;
+      }
+      
+      planets.forEach(planet => {
+        container.appendChild(createPlanetCard(planet));
+      });
+      
+    } catch (error) {
+      console.error('Error en displayPlanets:', error);
+      document.body.innerHTML = `
+        <div class="p-8 text-red-500 text-center">
+          Error crítico: ${error.message}
+        </div>
+      `;
     }
-}
+  }
 
-// Cargar inicialmente la vista de personajes
-showView('characters');
-fetchCharacters();
+  async function fetchPlanets() {
+    try {
+      planetsContainer.innerHTML = loader;
+      const response = await fetch('https://dragonball-api.com/api/planets');
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        displayPlanets(data.items);
+      } else {
+        displayPlanets([]);
+      }
+    } catch (error) {
+      console.error('Error al cargar planetas:', error);
+      planetsContainer.innerHTML = `
+        <div class="col-span-full text-center py-12 text-red-500">
+          Error al cargar los planetas
+        </div>
+      `;
+    }
+  }
+
+
+  // Event Listeners para cambiar de vista
+  
+  btnCharacters.addEventListener('click', () => {
+    document.getElementById('characters-view').classList.remove('hidden');
+    document.getElementById('planets-view').classList.add('hidden');
+    fetchCharacters();
+  });
+
+  btnPlanets.addEventListener('click', () => {
+    document.getElementById('planets-view').classList.remove('hidden');
+    document.getElementById('characters-view').classList.add('hidden');
+    fetchPlanets();
+  });
+
+  // Carga inicial (por defecto, personajes)
+  fetchCharacters();
+});
